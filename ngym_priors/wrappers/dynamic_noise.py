@@ -5,7 +5,7 @@ import gym
 import numpy as np
 
 
-class Noise(gym.Wrapper):
+class DynamicNoise(gym.Wrapper):
     """Add Gaussian noise to the observations.
 
     Args:
@@ -21,16 +21,16 @@ class Noise(gym.Wrapper):
         'paper_name': None,
     }
 
-    def __init__(self, env, std_noise=.1, perf_th=None, w=200,
+    def __init__(self, env, std_noise=.1, decrease=None, perf_th=None, w=200,
                  step_noise=0.0001):
         super().__init__(env)
         self.env = env
         self.std_noise = std_noise
-        self.std_noise = self.std_noise / self.env.dt
         self.init_noise = 0
         self.step_noise = step_noise
         self.w = w
         self.perf_th = perf_th
+        self.decrease = decrease
         if self.perf_th is not None:
             self.perf_th = perf_th
             self.perf = []
@@ -61,6 +61,9 @@ class Noise(gym.Wrapper):
             info['std_noise'] = self.std_noise
 
         # add noise
-        obs += self.env.rng.normal(loc=0, scale=self.std_noise,
+        scale = self.std_noise/(self.decrease*self.env.t_ind+1)\
+            if self.decrease is not None else self.std_noise
+        print(self.std_noise)
+        obs += self.env.rng.normal(loc=0, scale=scale,
                                    size=obs.shape)
         return obs, reward, done, info

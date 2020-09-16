@@ -9,7 +9,7 @@ import gym
 import numpy as np
 
 
-class ReactionTime(gym.Wrapper):  # TODO: Make this a trial wrapper instead?
+class VariableReactionTime(gym.Wrapper):  # TODO: Make this a trial wrapper instead?
     """Allow reaction time response.
 
     Modifies a given environment by allowing the network to act at
