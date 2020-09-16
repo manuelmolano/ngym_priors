@@ -21,7 +21,7 @@ class DynamicNoise(gym.Wrapper):
         'paper_name': None,
     }
 
-    def __init__(self, env, std_noise=.1, decrease=None, perf_th=None, w=200,
+    def __init__(self, env, std_noise=.1, ev_incr=None, perf_th=None, w=200,
                  step_noise=0.0001):
         super().__init__(env)
         self.env = env
@@ -30,7 +30,7 @@ class DynamicNoise(gym.Wrapper):
         self.step_noise = step_noise
         self.w = w
         self.perf_th = perf_th
-        self.decrease = decrease
+        self.ev_incr = ev_incr
         if self.perf_th is not None:
             self.perf_th = perf_th
             self.perf = []
@@ -61,9 +61,11 @@ class DynamicNoise(gym.Wrapper):
             info['std_noise'] = self.std_noise
 
         # add noise
-        scale = self.std_noise/(self.decrease*self.env.t_ind+1)\
-            if self.decrease is not None else self.std_noise
-        print(self.std_noise)
-        obs += self.env.rng.normal(loc=0, scale=scale,
-                                   size=obs.shape)
+        if self.ev_incr is None:
+            extra_obs = 0
+        else:
+            incr_factor = self.ev_incr*self.env.t_ind
+            extra_obs = obs*incr_factor
+        scale = self.std_noise
+        obs += extra_obs+self.env.rng.normal(loc=0, scale=scale, size=obs.shape)
         return obs, reward, done, info

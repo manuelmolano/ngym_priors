@@ -299,7 +299,7 @@ def test_variablemapping(env='NAltConditionalVisuomotor-v0', verbose=True,
 
 
 def test_noise(env='PerceptualDecisionMaking-v0', margin=0.01, perf_th=None,
-               decrease=1., num_steps=10000, verbose=True):
+               ev_incr=1., num_steps=1000, std_noise=0.1, verbose=True):
     """
     Test noise wrapper.
 
@@ -318,16 +318,19 @@ def test_noise(env='PerceptualDecisionMaking-v0', margin=0.01, perf_th=None,
         margin allowed when comparing actual and expected performances (0.01)
     perf_th : float, optional
         target performance for the noise wrapper (0.7)
-    decrease : float, optional
-        factor to decrease the noise as trials passes (1.0)
+    ev_incr : float, optional
+        factor to increase the evidence as trials passes (1.0)
+    std_noise : float, optional
+        standard deviation of gaussian noise added to the observation (1.0)
+
     Returns
     -------
     None.
 
     """
-    env_args = {'timing': {'fixation': 100, 'stimulus': 2000, 'decision': 200}}
+    env_args = {'timing': {'fixation': 100, 'stimulus': 5000, 'decision': 200}}
     env = gym.make(env, **env_args)
-    env = DynamicNoise(env, perf_th=perf_th, std_noise=20, decrease=decrease)
+    env = DynamicNoise(env, perf_th=perf_th, std_noise=std_noise, ev_incr=ev_incr)
     env.reset()
     if verbose:
         observations = []
@@ -337,7 +340,6 @@ def test_noise(env='PerceptualDecisionMaking-v0', margin=0.01, perf_th=None,
         reward = []
         perf = []
         std_mat = []
-        obs_cum = 0
     std_noise = 0
     for stp in range(num_steps):
         if np.random.rand() < std_noise:
@@ -349,12 +351,11 @@ def test_noise(env='PerceptualDecisionMaking-v0', margin=0.01, perf_th=None,
             std_noise = info['std_noise']
         if verbose:
             if info['new_trial']:
-                print('----------')
                 perf.append(info['performance'])
                 std_mat.append(std_noise)
                 obs_cum = 0
             else:
-                obs_cum += obs[1] - obs[2]
+                obs_cum = obs[1] - obs[2]
             observations.append(obs)
             actions.append(action)
             obs_cum_mat.append(obs_cum)

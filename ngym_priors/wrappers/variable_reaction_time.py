@@ -26,7 +26,7 @@ class VariableReactionTime(gym.Wrapper):  # TODO: Make this a trial wrapper inst
         super().__init__(env)
         self.env = env
         self.urgency = urgency
-        self.stim_dur_limit = stim_dur_limit
+        self.stim_dur_limit = max(self.env.dt+1, stim_dur_limit)
         self.tr_dur = 0
 
     def reset(self, step_fn=None):
