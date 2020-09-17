@@ -53,8 +53,9 @@ class VariableReactionTime(gym.Wrapper):  # TODO: Make this a trial wrapper inst
             self.env.start_t[dec] =\
                 self.env.start_t[stim]+self.min_stim_dur*self.env.dt
             # change ground truth accordingly
-            self.env.gt[self.start_ind[stim]+self.min_stim_dur:
-                        self.env.end_ind[stim]] = self.env.gt[self.start_ind[dec]]
+            self.env.gt[self.env.start_ind[stim]+self.min_stim_dur:
+                        self.env.end_ind[stim]] =\
+                self.env.gt[self.env.start_ind[dec]]
         obs, reward, done, info = self.env.step(action)
         if info['new_trial']:
             info['min_stim_dur'] = self.min_stim_dur

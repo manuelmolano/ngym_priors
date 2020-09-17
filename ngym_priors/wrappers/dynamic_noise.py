@@ -61,11 +61,18 @@ class DynamicNoise(gym.Wrapper):
             info['std_noise'] = self.std_noise
 
         # add noise
-        if self.ev_incr is None:
-            extra_obs = 0
-        else:
-            incr_factor = self.ev_incr*self.env.t_ind
-            extra_obs = obs*incr_factor
-        scale = self.std_noise
-        obs += extra_obs+self.env.rng.normal(loc=0, scale=scale, size=obs.shape)
+        time_stp = self.env.t_ind
+        stim = 'stimulus'
+        if time_stp > self.env.start_ind[stim]:
+            stim_indx = self.observation_space.name['stimulus']
+            if self.ev_incr is None:
+                extra_obs = 0
+            else:
+                fact = np.log(1.1)
+                incr_factor =\
+                    np.log(self.ev_incr*(time_stp-self.env.start_ind[stim]))/fact
+                extra_obs = obs[stim_indx]*incr_factor
+            scale = self.std_noise
+            obs[stim_indx] += extra_obs+self.env.rng.normal(loc=0, scale=scale,
+                                                            size=len(stim_indx))
         return obs, reward, done, info
