@@ -3,7 +3,7 @@
 
 import gym
 import numpy as np
-
+import collections as coll
 
 class DynamicNoise(gym.Wrapper):
     """Add Gaussian noise to the observations.
@@ -59,7 +59,6 @@ class DynamicNoise(gym.Wrapper):
                 self.std_noise = max(0, self.std_noise-self.step_noise)
             info['perf_mean'] = perf_mean
             info['std_noise'] = self.std_noise
-
         # add noise
         time_stp = self.env.t_ind
         stim = 'stimulus'
@@ -68,9 +67,9 @@ class DynamicNoise(gym.Wrapper):
             if self.ev_incr is None:
                 extra_obs = 0
             else:
-                fact = np.log(1.1)
+                fact = np.log(1+1/self.ev_incr)
                 incr_factor =\
-                    np.log(self.ev_incr*(time_stp-self.env.start_ind[stim]))/fact
+                    np.log((time_stp-self.env.start_ind[stim]))/fact
                 extra_obs = obs[stim_indx]*incr_factor
             scale = self.std_noise
             obs[stim_indx] += extra_obs+self.env.rng.normal(loc=0, scale=scale,
