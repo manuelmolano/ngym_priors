@@ -90,7 +90,7 @@ def test_passreward(env_name='PerceptualDecisionMaking-v0', num_steps=1000,
 
 
 def test_reactiontime(env_name='PerceptualDecisionMaking-v0', num_steps=10000,
-                      urgency=-0.1, ths=[-.5, .5], stim_dur_limit=1000,
+                      urgency=-0.1, ths=[-.5, .5], stim_dur_limit=0,
                       verbose=True):
     """
     Test reaction-time wrapper.
@@ -149,10 +149,6 @@ def test_reactiontime(env_name='PerceptualDecisionMaking-v0', num_steps=10000,
             min_stim_mat.append(info['min_stim_dur'])
         else:
             step += 1
-            # print('-----------')
-            # print(step)
-            # print(end_of_trial)
-            # print(env.min_stim_dur)
             assert not end_of_trial or step <= env.min_stim_dur+fix/env.dt,\
                 'Trial still on after making a decision'
             obs_cum += obs[1] - obs[2]
@@ -557,9 +553,9 @@ if __name__ == '__main__':
                                              'stimulus': 200,
                                              'decision': 200}}
     # test_identity('Nothing-v0', num_steps=5)
-    test_noise()
-    sys.exit()
     test_reactiontime()
+    sys.exit()
+    test_noise()
     test_timeout()
     sys.exit()
     test_variablemapping()

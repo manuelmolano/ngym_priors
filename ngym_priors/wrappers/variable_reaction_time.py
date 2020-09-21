@@ -59,7 +59,7 @@ class VariableReactionTime(gym.Wrapper):  # TODO: Make this a trial wrapper inst
         obs, reward, done, info = self.env.step(action)
         if info['new_trial']:
             info['min_stim_dur'] = self.min_stim_dur
-            info['tr_dur'] = self.tr_dur
+            info['tr_dur'] = self.tr_dur+1
             obs *= 0
         else:
             self.tr_dur = self.env.t_ind

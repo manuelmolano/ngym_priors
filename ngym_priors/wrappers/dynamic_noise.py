@@ -21,7 +21,7 @@ class DynamicNoise(gym.Wrapper):
         'paper_name': None,
     }
 
-    def __init__(self, env, std_noise=.1, ev_incr=None, perf_th=None, w=200,
+    def __init__(self, env, std_noise=.1, ev_incr=0, perf_th=None, w=200,
                  step_noise=0.0001):
         super().__init__(env)
         self.env = env
@@ -64,7 +64,7 @@ class DynamicNoise(gym.Wrapper):
         stim = 'stimulus'
         if time_stp > self.env.start_ind[stim]:
             stim_indx = self.observation_space.name['stimulus']
-            if self.ev_incr is None:
+            if self.ev_incr == 0:
                 extra_obs = 0
             else:
                 fact = np.log(1+1/self.ev_incr)
