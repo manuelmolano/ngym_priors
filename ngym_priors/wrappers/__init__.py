@@ -12,8 +12,14 @@ from ngym_priors.wrappers.variable_mapping import VariableMapping
 from ngym_priors.wrappers.time_out import TimeOut
 from ngym_priors.wrappers.dynamic_noise import DynamicNoise
 from ngym_priors.wrappers.monitor_extended import MonitorExtended
+from ngym_priors.wrappers.catch_trials import CatchTrials
+from ngym_priors.wrappers.trial_hist import TrialHistory
+from ngym_priors.wrappers.combine import Combine
+from ngym_priors.wrappers.identity import Identity
+from ngym_priors.wrappers.transfer_learning import TransferLearning
 
-ALL_WRAPPERS = {'DynamicNoise-v0': 'ngym_priors.wrappers.dynamic_noise:DynamicNoise',
+ALL_WRAPPERS = {'DynamicNoise-v0':
+                'ngym_priors.wrappers.dynamic_noise:DynamicNoise',
                 'TrialHistoryEv-v0':
                     'ngym_priors.wrappers.trial_hist_ev:TrialHistoryEvolution',
                 'VariableMapping-v0':
@@ -26,6 +32,12 @@ ALL_WRAPPERS = {'DynamicNoise-v0': 'ngym_priors.wrappers.dynamic_noise:DynamicNo
                     'ngym_priors.wrappers.variable_reaction_time:VariableReactionTime',
                 'MonitorExtended-v0':
                     'ngym_priors.wrappers.monitor_extended:MonitorExtended',
+                'CatchTrials-v0': 'ngym_priors.wrappers.catch_trials:CatchTrials',
+                'TrialHistory-v0': 'ngym_priors.wrappers.trial_hist:TrialHistory',
+                'Combine-v0': 'ngym_priors.wrappers.combine:Combine',
+                'Identity-v0': 'ngym_priors.wrappers.identity:Identity',
+                'TransferLearning-v0':
+                    'ngym_priors.wrappers.transfer_learning:TransferLearning',
                 }
 def all_wrappers():
     return sorted(list(ALL_WRAPPERS.keys()))
