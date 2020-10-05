@@ -46,9 +46,7 @@ class NAltPerceptualDecisionMaking(ngym.TrialEnv):
                                                 must be True/False'
         assert isinstance(ob_nch, bool), 'ob_nch \
                                                 must be True/False'
-        n_ch_factor = 1.84665761*np.log(n_ch)-0.04102044
-        # The strength of evidence, modulated by stim_scale.
-        self.cohs = np.array(cohs)*n_ch_factor*stim_scale
+        self.cohs = np.array(cohs)*stim_scale
         self.sigma = sigma / np.sqrt(self.dt)  # Input noise
 
         # Rewards
@@ -95,10 +93,14 @@ class NAltPerceptualDecisionMaking(ngym.TrialEnv):
             ground_truth = self.rng.choice(kwargs['sel_chs'])
         else:
             ground_truth = self.rng.choice(self.choices)
-
+        # get number of effective choices and compute factor
+        n_ch = self.n
+        if 'sel_chs' in kwargs.keys() and self.zero_irrelevant_stim:
+            n_ch = len(kwargs['sel_chs'])
+        n_ch_factor = 1.84665761*np.log(n_ch)-0.04102044
         trial = {
             'ground_truth': ground_truth,
-            'coh': self.rng.choice(self.cohs),
+            'coh': self.rng.choice(self.cohs*n_ch_factor),
         }
         trial.update(kwargs)
         fixation = None if 'fixation' not in kwargs.keys() else kwargs['fixation']
