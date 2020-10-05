@@ -386,7 +386,7 @@ def test_noise(env='PerceptualDecisionMaking-v0', margin=0.01, perf_th=None,
 
 def test_timeout(env='NAltPerceptualDecisionMaking-v0', time_out=500,
                  num_steps=100, verbose=True):
-    env_args = {'n_ch': 2,
+    env_args = {'n_ch': 4,
                 'timing': {'fixation': 100, 'stimulus': 200, 'decision': 200}}
     env = gym.make(env, **env_args)
     env = TimeOut(env, time_out=time_out)
@@ -553,10 +553,15 @@ if __name__ == '__main__':
                                              'stimulus': 200,
                                              'decision': 200}}
     # test_identity('Nothing-v0', num_steps=5)
-    test_reactiontime()
+    data = test_concat_wrpprs_th_vch_pssr_pssa('NAltPerceptualDecisionMaking-v0',
+                                               num_steps=200000, verbose=True,
+                                               probs=0.99, num_blocks=16,
+                                               env_args=env_args)
     sys.exit()
-    test_noise()
+
     test_timeout()
+    test_reactiontime()
+    test_noise()
     sys.exit()
     test_variablemapping()
     sys.exit()
@@ -565,7 +570,3 @@ if __name__ == '__main__':
 
     # test_trialhistEv('NAltPerceptualDecisionMaking-v0', num_steps=100000,
     #                  probs=0.8, num_blocks=3, verbose=True, num_ch=8)
-    # data = test_concat_wrpprs_th_vch_pssr_pssa('NAltPerceptualDecisionMaking-v0',
-    #                                            num_steps=20000, verbose=True,
-    #                                            probs=0.99, num_blocks=16,
-    #                                            env_args=env_args)

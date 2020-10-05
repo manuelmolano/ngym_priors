@@ -93,7 +93,8 @@ class NAltPerceptualDecisionMaking(ngym.TrialEnv):
             ground_truth = self.rng.choice(kwargs['sel_chs'])
         else:
             ground_truth = self.rng.choice(self.choices)
-        # get number of effective choices and compute factor
+        # get number of effective choices and compute factor to have similar
+        # performance for different number of choices
         n_ch = self.n
         if 'sel_chs' in kwargs.keys() and self.zero_irrelevant_stim:
             n_ch = len(kwargs['sel_chs'])
