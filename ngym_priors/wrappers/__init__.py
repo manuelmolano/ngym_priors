@@ -17,6 +17,7 @@ from ngym_priors.wrappers.trial_hist import TrialHistory
 from ngym_priors.wrappers.combine import Combine
 from ngym_priors.wrappers.identity import Identity
 from ngym_priors.wrappers.transfer_learning import TransferLearning
+from ngym_priors.wrappers.perfect_integrator import PerfectIntegrator
 
 ALL_WRAPPERS = {'DynamicNoise-v0':
                 'ngym_priors.wrappers.dynamic_noise:DynamicNoise',
@@ -38,6 +39,8 @@ ALL_WRAPPERS = {'DynamicNoise-v0':
                 'Identity-v0': 'ngym_priors.wrappers.identity:Identity',
                 'TransferLearning-v0':
                     'ngym_priors.wrappers.transfer_learning:TransferLearning',
+                'PerfectIntegrator-v0':
+                    'ngym_priors.wrappers.perfect_integrator:PerfectIntegrator',                    
                 }
 def all_wrappers():
     return sorted(list(ALL_WRAPPERS.keys()))

@@ -17,6 +17,7 @@ from ngym_priors.wrappers.trial_hist_ev import TrialHistoryEvolution
 from ngym_priors.wrappers.variable_mapping import VariableMapping
 from ngym_priors.wrappers.time_out import TimeOut
 from ngym_priors.wrappers.dynamic_noise import DynamicNoise
+from ngym_priors.wrappers.perfect_integrator import PerfectIntegrator
 
 
 def test_passaction(env_name='PerceptualDecisionMaking-v0', num_steps=1000,
@@ -24,7 +25,6 @@ def test_passaction(env_name='PerceptualDecisionMaking-v0', num_steps=1000,
     """
     Test pass-action wrapper.
 
-    TODO: explain wrapper
     Parameters
     ----------
     env_name : str, optional
@@ -59,7 +59,7 @@ def test_passreward(env_name='PerceptualDecisionMaking-v0', num_steps=1000,
                     verbose=False):
     """
     Test pass-reward wrapper.
-    TODO: explain wrapper
+
     Parameters
     ----------
     env_name : str, optional
@@ -88,7 +88,39 @@ def test_passreward(env_name='PerceptualDecisionMaking-v0', num_steps=1000,
         if done:
             env.reset()
 
+def test_perf_integrator(env='NAltPerceptualDecisionMaking-v0', num_steps=100,
+                         verbose=True):
+    """
+    Test pass-reward wrapper.
 
+    Parameters
+    ----------
+    env_name : str, optional
+        enviroment to wrap.. The default is 'PerceptualDecisionMaking-v0'.
+    num_steps : int, optional
+        number of steps to run the environment (1000)
+    verbose : boolean, optional
+        whether to print observation and reward (False)
+
+    Returns
+    -------
+    None.
+
+    """
+    env = gym.make(env)
+    env = PerfectIntegrator(env)
+    obs = env.reset()
+    for stp in range(num_steps):
+        action = env.action_space.sample()
+        obs, rew, done, info = env.step(action)
+        assert obs[-1] == rew, 'Previous reward is not part of observation'
+        if verbose:
+            print(obs)
+            print(rew)
+            print('--------')
+        if done:
+            env.reset()
+    
 def test_reactiontime(env_name='PerceptualDecisionMaking-v0', num_steps=10000,
                       urgency=-0.1, ths=[-.5, .5], stim_dur_limit=0,
                       verbose=True):
@@ -552,12 +584,13 @@ if __name__ == '__main__':
     env_args = {'stim_scale': 10, 'timing': {'fixation': 100,
                                              'stimulus': 200,
                                              'decision': 200}}
+    test_perf_integrator
+    sys.exit()
     # test_identity('Nothing-v0', num_steps=5)
     data = test_concat_wrpprs_th_vch_pssr_pssa('NAltPerceptualDecisionMaking-v0',
                                                num_steps=200000, verbose=True,
                                                probs=0.99, num_blocks=16,
                                                env_args=env_args)
-    sys.exit()
 
     test_timeout()
     test_reactiontime()
