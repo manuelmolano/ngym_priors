@@ -9,7 +9,7 @@ Created on Tue Jul 28 10:02:28 2020
 import neurogym as ngym
 from neurogym.core import TrialWrapper
 import numpy as np
-import itertools as it
+from collections import deque
 
 
 class TrialHistoryEvolution(TrialWrapper):
@@ -56,7 +56,7 @@ class TrialHistoryEvolution(TrialWrapper):
 
     def __init__(self, env, probs=None, ctx_dur=200, num_contexts=3,
                  fix_2AFC=False, death_prob=0.0001, ctx_ch_prob=None,
-                 balanced_probs=False, predef_tr_mats=False):
+                 balanced_probs=False, predef_tr_mats=False, perf_th_trh=None):
         super().__init__(env)
         try:
             self.n_ch = len(self.unwrapped.choices)  # max num of choices
@@ -75,8 +75,17 @@ class TrialHistoryEvolution(TrialWrapper):
         self.ctx_ch_prob = ctx_ch_prob
         if ctx_ch_prob is None:
             self.death_prob = death_prob*ctx_dur
+            self.perf_w = int(ctx_dur)
         else:
             self.death_prob = death_prob/ctx_ch_prob
+            self.perf_w = int(1/ctx_ch_prob)
+        # performance threshold to change block
+        if perf_th_trh is not None:
+            self.perf = deque(maxlen=self.perf_w)
+            self.perf_th = perf_th_trh
+        else:
+            self.perf_th = 0
+            self.perf = []
         self.curr_contexts = self.contexts
         self.curr_tr_mat = self.trans_probs
         assert self.curr_tr_mat.shape[1] == self.n_ch,\
@@ -101,7 +110,8 @@ class TrialHistoryEvolution(TrialWrapper):
             self.curr_tr_mat = self.trans_probs
             block_change = True
         # change rep. prob. every self.ctx_dur trials
-        if not block_change:
+        if not block_change and len(self.perf) >= self.perf_w and\
+           np.mean(self.perf) >= self.perf_th:
             if self.ctx_ch_prob is None:
                 block_change = self.unwrapped.num_tr % self.ctx_dur == 0
             else:
@@ -179,4 +189,6 @@ class TrialHistoryEvolution(TrialWrapper):
         info['curr_block'] = self.blk_id
         info['new_generation'] = self.new_generation
         self.new_generation = False
+        if info['new_trial'] and self.perf_th != 0:
+            self.perf.append(1*info['performance'])
         return obs, reward, done, info
