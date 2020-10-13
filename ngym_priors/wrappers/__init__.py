@@ -18,6 +18,8 @@ from ngym_priors.wrappers.combine import Combine
 from ngym_priors.wrappers.identity import Identity
 from ngym_priors.wrappers.transfer_learning import TransferLearning
 from ngym_priors.wrappers.perfect_integrator import PerfectIntegrator
+from ngym_priors.wrappers.stim_acc_signal import StimAccSignal
+from ngym_priors.wrappers.learn_trans_matrix import LearnTransMatrix
 
 ALL_WRAPPERS = {'DynamicNoise-v0':
                 'ngym_priors.wrappers.dynamic_noise:DynamicNoise',
@@ -40,7 +42,12 @@ ALL_WRAPPERS = {'DynamicNoise-v0':
                 'TransferLearning-v0':
                     'ngym_priors.wrappers.transfer_learning:TransferLearning',
                 'PerfectIntegrator-v0':
-                    'ngym_priors.wrappers.perfect_integrator:PerfectIntegrator',                    
-                }
+                    'ngym_priors.wrappers.perfect_integrator:PerfectIntegrator',
+                'StimAccSignal-v0':
+                    'ngym_priors.wrappers.stim_acc_signal:StimAccSignal',
+                'LearnTransMatrix-v0':
+                    'ngym_priors.wrappers.learn_trans_matrix:LearnTransMatrix'}
+
+
 def all_wrappers():
     return sorted(list(ALL_WRAPPERS.keys()))

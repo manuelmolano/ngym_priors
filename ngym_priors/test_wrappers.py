@@ -18,6 +18,8 @@ from ngym_priors.wrappers.variable_mapping import VariableMapping
 from ngym_priors.wrappers.time_out import TimeOut
 from ngym_priors.wrappers.dynamic_noise import DynamicNoise
 from ngym_priors.wrappers.perfect_integrator import PerfectIntegrator
+from ngym_priors.wrappers.stim_acc_signal import StimAccSignal
+from ngym_priors.wrappers.learn_trans_matrix import LearnTransMatrix
 
 
 def test_passaction(env_name='PerceptualDecisionMaking-v0', num_steps=1000,
@@ -88,6 +90,7 @@ def test_passreward(env_name='PerceptualDecisionMaking-v0', num_steps=1000,
         if done:
             env.reset()
 
+
 def test_perf_integrator(env='NAltPerceptualDecisionMaking-v0', num_steps=100,
                          verbose=True):
     """
@@ -107,20 +110,183 @@ def test_perf_integrator(env='NAltPerceptualDecisionMaking-v0', num_steps=100,
     None.
 
     """
-    env = gym.make(env)
+    env_args = {'timing': {'fixation': 100, 'stimulus': 100, 'decision': 100},
+                'n_ch': 4}
+    env = gym.make(env, **env_args)
     env = PerfectIntegrator(env)
+    env = PassAction(env)
+    env = PassReward(env)
     obs = env.reset()
+    if verbose:
+        observations = []
+        reward = []
+        actions = []
+        gt = []
+        perf_int_act = []
+        new_trials = []
     for stp in range(num_steps):
         action = env.action_space.sample()
         obs, rew, done, info = env.step(action)
-        assert obs[-1] == rew, 'Previous reward is not part of observation'
         if verbose:
-            print(obs)
-            print(rew)
-            print('--------')
+            observations.append(obs)
+            actions.append(action)
+            reward.append(rew)
+            new_trials.append(info['new_trial'])
+            gt.append(info['gt'])
+            perf_int_act.append(info['act_io'])
         if done:
             env.reset()
-    
+    if verbose:
+        observations = np.array(observations)
+        _, ax = plt.subplots(nrows=3, ncols=1, sharex=True)
+        ax = ax.flatten()
+        ax[0].imshow(observations.T, aspect='auto')
+        ax[1].plot(actions, label='Actions')
+        ax[1].plot(gt, '--', label='gt')
+        ax[1].plot(perf_int_act, '--', label='act-perf-int')
+        ax[1].set_xlim([-.5, len(actions)-0.5])
+        ax[1].legend()
+        ax[2].plot(reward)
+        end_of_trial = np.where(new_trials)[0]
+        for a in ax:
+            ylim = a.get_ylim()
+            for ch in end_of_trial:
+                a.plot([ch, ch], ylim, '--c')
+        ax[2].set_xlim([-.5, len(actions)-0.5])
+
+
+def test_learn_trans_matrix(env='NAltPerceptualDecisionMaking-v0', num_steps=1000,
+                            verbose=True, n_ch=4, th=0.5):
+    """
+    Test pass-reward wrapper.
+
+    Parameters
+    ----------
+    env_name : str, optional
+        enviroment to wrap.. The default is 'PerceptualDecisionMaking-v0'.
+    num_steps : int, optional
+        number of steps to run the environment (1000)
+    verbose : boolean, optional
+        whether to print observation and reward (False)
+
+    Returns
+    -------
+    None.
+
+    """
+    env_args = {'timing': {'fixation': 100, 'stimulus': 500, 'decision': 100},
+                'n_ch': n_ch}
+    env = gym.make(env, **env_args)
+    env = TrialHistoryEvolution(env, probs=0.9, predef_tr_mats=True,
+                                num_contexts=1)    
+    env = LearnTransMatrix(env)
+    env = PassAction(env)
+    env = PassReward(env)
+    obs = env.reset()
+    if verbose:
+        observations = []
+        reward = []
+        actions = []
+        gt = []
+        new_trials = []
+    obs_cum = np.zeros((n_ch,))
+    for stp in range(num_steps):
+        if (obs_cum - np.mean(obs_cum) > th).any():
+            action = np.argmax(obs_cum - np.mean(obs_cum))+1
+        else:
+            action = 0
+        obs, rew, done, info = env.step(action)
+        if info['new_trial']:
+            obs_cum = np.zeros((env_args['n_ch'],))
+        else:
+            obs_cum += obs[1:n_ch+1]
+        if verbose:
+            observations.append(obs)
+            actions.append(action)
+            reward.append(rew)
+            new_trials.append(info['new_trial'])
+            gt.append(info['gt'])
+        if done:
+            env.reset()
+    if verbose:
+        observations = np.array(observations)
+        _, ax = plt.subplots(nrows=3, ncols=1, sharex=True)
+        ax = ax.flatten()
+        ax[0].imshow(observations.T, aspect='auto')
+        ax[1].plot(actions, label='Actions')
+        ax[1].plot(gt, '--', label='gt')
+        ax[1].set_xlim([-.5, len(actions)-0.5])
+        ax[1].legend()
+        ax[2].plot(reward)
+        end_of_trial = np.where(new_trials)[0]
+        for a in ax:
+            ylim = a.get_ylim()
+            for ch in end_of_trial:
+                a.plot([ch, ch], ylim, '--c')
+        ax[2].set_xlim([-.5, len(actions)-0.5])
+
+
+def test_stim_acc_signal(env='NAltPerceptualDecisionMaking-v0', num_steps=100,
+                         verbose=True):
+    """
+    Test pass-reward wrapper.
+
+    Parameters
+    ----------
+    env_name : str, optional
+        enviroment to wrap.. The default is 'PerceptualDecisionMaking-v0'.
+    num_steps : int, optional
+        number of steps to run the environment (1000)
+    verbose : boolean, optional
+        whether to print observation and reward (False)
+
+    Returns
+    -------
+    None.
+
+    """
+    env_args = {'timing': {'fixation': 100, 'stimulus': 300, 'decision': 100},
+                'n_ch': 4}
+    env = gym.make(env, **env_args)
+    env = StimAccSignal(env)
+    env = PassAction(env)
+    env = PassReward(env)
+    obs = env.reset()
+    if verbose:
+        observations = []
+        reward = []
+        actions = []
+        gt = []
+        new_trials = []
+    for stp in range(num_steps):
+        action = env.action_space.sample()
+        obs, rew, done, info = env.step(action)
+        if verbose:
+            observations.append(obs)
+            actions.append(action)
+            reward.append(rew)
+            new_trials.append(info['new_trial'])
+            gt.append(info['gt'])
+        if done:
+            env.reset()
+    if verbose:
+        observations = np.array(observations)
+        _, ax = plt.subplots(nrows=3, ncols=1, sharex=True)
+        ax = ax.flatten()
+        ax[0].imshow(observations.T, aspect='auto')
+        ax[1].plot(actions, label='Actions')
+        ax[1].plot(gt, '--', label='gt')
+        ax[1].set_xlim([-.5, len(actions)-0.5])
+        ax[1].legend()
+        ax[2].plot(reward)
+        end_of_trial = np.where(new_trials)[0]
+        for a in ax:
+            ylim = a.get_ylim()
+            for ch in end_of_trial:
+                a.plot([ch, ch], ylim, '--c')
+        ax[2].set_xlim([-.5, len(actions)-0.5])
+
+
 def test_reactiontime(env_name='PerceptualDecisionMaking-v0', num_steps=10000,
                       urgency=-0.1, ths=[-.5, .5], stim_dur_limit=0,
                       verbose=True):
@@ -210,7 +376,7 @@ def test_reactiontime(env_name='PerceptualDecisionMaking-v0', num_steps=10000,
         ax[3].plot(reward, label='reward')
         ax[3].set_xlim([-.5, len(actions)-0.5])
         ax[4].plot(min_stim_mat, label='stim-dur')
-        ax[4].set_xlim([-.5, len(actions)-0.5])        
+        ax[4].set_xlim([-.5, len(actions)-0.5])
 
 
 def test_variablemapping(env='NAltConditionalVisuomotor-v0', verbose=True,
@@ -584,8 +750,10 @@ if __name__ == '__main__':
     env_args = {'stim_scale': 10, 'timing': {'fixation': 100,
                                              'stimulus': 200,
                                              'decision': 200}}
-    test_perf_integrator
+    test_learn_trans_matrix()
     sys.exit()
+    test_stim_acc_signal()
+    test_perf_integrator()
     # test_identity('Nothing-v0', num_steps=5)
     data = test_concat_wrpprs_th_vch_pssr_pssa('NAltPerceptualDecisionMaking-v0',
                                                num_steps=200000, verbose=True,
