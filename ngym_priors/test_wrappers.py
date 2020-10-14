@@ -155,7 +155,7 @@ def test_perf_integrator(env='NAltPerceptualDecisionMaking-v0', num_steps=100,
         ax[2].set_xlim([-.5, len(actions)-0.5])
 
 
-def test_learn_trans_matrix(env='NAltPerceptualDecisionMaking-v0', num_steps=1000,
+def test_learn_trans_matrix(env='NAltPerceptualDecisionMaking-v0', num_steps=100,
                             verbose=True, n_ch=4, th=0.5):
     """
     Test pass-reward wrapper.

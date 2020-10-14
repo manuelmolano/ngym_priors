@@ -32,8 +32,8 @@ class LearnTransMatrix(Wrapper):
             raise AttributeError('task must have attribute choices')
         assert isinstance(self.unwrapped, ngym.TrialEnv), 'Task has to be TrialEnv'
         self.trans_mat = np.ones((self.n_ch, self.n_ch))/self.n_ch
-        self.prev_choice = 1
-        self.lr = 0.2
+        self.prev_choice = -1
+        self.lr = 0.5
         self.obs_sh = self.env.observation_space.shape[0]
         self.observation_space = spaces.Box(-np.inf, np.inf,
                                             shape=(self.obs_sh+self.n_ch,),
@@ -47,15 +47,19 @@ class LearnTransMatrix(Wrapper):
         # get perfect integrator action
         # make action
         obs, reward, done, info = self.env.step(action)
-        probs = self.trans_mat[self.prev_choice, :]
+        if self.prev_choice != -1:
+            probs = self.trans_mat[self.prev_choice, :]
+        else:
+            probs = np.ones((self.n_ch,))/self.n_ch
         obs_prev_act_rew = np.concatenate((obs, probs))
         # if it's the end of trial, store action and reward, and update performance
         if info['new_trial']:
             # build observation from previous action and reward
-            Qn = self.trans_mat[self.prev_choice, action-1]
-            Qn_1 = Qn+self.lr*(1-Qn)
-            self.trans_mat[self.prev_choice, action-1] = Qn_1
-            self.trans_mat[self.prev_choice, :] /=\
-                np.sum(self.trans_mat[self.prev_choice, :]) 
+            if self.prev_choice != -1 and action != 0:
+                Qn = self.trans_mat[self.prev_choice, action-1]
+                Qn_1 = Qn+self.lr*(1-Qn)
+                self.trans_mat[self.prev_choice, action-1] = Qn_1
+                self.trans_mat[self.prev_choice, :] /=\
+                    np.sum(self.trans_mat[self.prev_choice, :]) 
             self.prev_choice = action-1
         return obs_prev_act_rew, reward, done, info
