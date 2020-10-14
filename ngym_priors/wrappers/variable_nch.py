@@ -23,7 +23,7 @@ class Variable_nch(TrialWrapper):
     }
 
     def __init__(self, env, block_nch=100, blocks_probs=None, sorted_ch=True,
-                 prob_12=None, perf_th_var=None):
+                 prob_12=None):
         """
         block_nch: duration of each block containing a specific number
         of active choices
@@ -37,13 +37,6 @@ class Variable_nch(TrialWrapper):
         self.max_nch = len(self.unwrapped.choices)  # Max number of choices
         self.prob_12 = prob_12 if self.max_nch > 2 else 1
         self.sorted_ch = sorted_ch
-        self.perf_w = block_nch
-        if perf_th_var is not None:
-            self.perf = deque(maxlen=self.perf_w)
-            self.perf_th = perf_th_var
-        else:
-            self.perf_th = 0
-            self.perf = []
         # uniform distr. across choices unless prob(n_ch=2) (prob_2) is specified
         if blocks_probs is not None:
             self.prob = blocks_probs[:self.max_nch-1]
@@ -64,10 +57,8 @@ class Variable_nch(TrialWrapper):
             del kwargs['ground_truth']
         self.block_dur += 1
         # We change number of active choices every 'block_nch'.
-        if self.block_dur > self.block_nch and\
-           len(self.perf) >= self.perf_w and np.mean(self.perf) >= self.perf_th:
+        if self.block_dur > self.block_nch:
             self.block_dur = 0
-            self.perf = deque(maxlen=self.perf_w)
             self.get_sel_chs()
 
         kwargs.update({'sel_chs': self.sel_chs})
@@ -97,6 +88,4 @@ class Variable_nch(TrialWrapper):
         obs, reward, done, info = self.env.step(action)
         info['nch'] = self.nch
         info['sel_chs'] = '-'.join([str(x+1) for x in self.sel_chs])
-        if info['new_trial'] and self.perf_th != 0:
-            self.perf.append(1*info['performance'])
         return obs, reward, done, info
