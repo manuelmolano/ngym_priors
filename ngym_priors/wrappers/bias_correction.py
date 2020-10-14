@@ -45,13 +45,5 @@ class BiasCorrection(Wrapper):
                 factor = np.min([(1+np.sum(np.array(self.choices) == x)) /
                                  np.sum(np.array(self.ground_truth) == x)
                                  for x in poss_chs])
-                # times_action = np.sum(np.array(self.choices) == action)
-                # times_ground_truth = np.sum(np.array(self.ground_truth) == action)
-                # factor_bis = min(1, times_ground_truth/times_action)
-                # print(self.choices)
-                # print(self.ground_truth)
-                # print(factor)
-                # print(factor_bis)
-                # print('----------')
                 reward = reward*factor
         return obs, reward, done, info
