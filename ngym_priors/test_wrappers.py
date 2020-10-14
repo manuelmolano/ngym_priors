@@ -20,6 +20,9 @@ from ngym_priors.wrappers.dynamic_noise import DynamicNoise
 from ngym_priors.wrappers.perfect_integrator import PerfectIntegrator
 from ngym_priors.wrappers.stim_acc_signal import StimAccSignal
 from ngym_priors.wrappers.learn_trans_matrix import LearnTransMatrix
+from ngym_priors.wrappers.compute_mean_perf import ComputeMeanPerf
+from ngym_priors.wrappers.perf_phases import PerfPhases
+from ngym_priors.wrappers.bias_correction import BiasCorrection
 
 
 def test_passaction(env_name='PerceptualDecisionMaking-v0', num_steps=1000,
@@ -85,6 +88,40 @@ def test_passreward(env_name='PerceptualDecisionMaking-v0', num_steps=1000,
         assert obs[-1] == rew, 'Previous reward is not part of observation'
         if verbose:
             print(obs)
+            print(rew)
+            print('--------')
+        if done:
+            env.reset()
+
+
+def test_biascorrection(env_name='NAltPerceptualDecisionMaking-v0', num_steps=1000,
+                        verbose=True):
+    """
+    Test pass-reward wrapper.
+
+    Parameters
+    ----------
+    env_name : str, optional
+        enviroment to wrap.. The default is 'PerceptualDecisionMaking-v0'.
+    num_steps : int, optional
+        number of steps to run the environment (1000)
+    verbose : boolean, optional
+        whether to print observation and reward (False)
+
+    Returns
+    -------
+    None.
+
+    """
+    env_args = {'timing': {'fixation': 100, 'stimulus': 100, 'decision': 100},
+                'n_ch': 4}
+    env = gym.make(env_name, **env_args)
+    env = BiasCorrection(env, choice_w=100)
+    obs = env.reset()
+    for stp in range(num_steps):
+        action = 1  # env.action_space.sample()
+        obs, rew, done, info = env.step(action)
+        if info['new_trial'] and verbose and info['performance'] == 1:
             print(rew)
             print('--------')
         if done:
@@ -609,17 +646,27 @@ def test_timeout(env='NAltPerceptualDecisionMaking-v0', time_out=500,
         ax[1].legend()
 
 
-def test_concat_wrpprs_th_vch_pssr_pssa(env_name, num_steps=100000, probs=0.8,
-                                        num_blocks=16, verbose=False, num_ch=8,
-                                        variable_nch=True, env_args={}):
+def test_concat_wrpprs_th_vch_pssr_pssa(env_name='NAltPerceptualDecisionMaking-v0',
+                                        num_steps=1000, probs=0.8, num_blocks=16,
+                                        verbose=True, num_ch=6, variable_nch=True,
+                                        th=0.5, env_args={}):
+    var_nch_block = 100
+    var_nch_perf_th = 0.8
+    tr_hist_block = 20
+    tr_hist_perf_th = 0.86
     env_args['n_ch'] = num_ch
     env_args['zero_irrelevant_stim'] = True
-    env_args['ob_histblock'] = True
+    env_args['ob_histblock'] = False
     env = gym.make(env_name, **env_args)
-    env = TrialHistoryEvolution(env, probs=probs, ctx_ch_prob=0.005,
+    env = TrialHistoryEvolution(env, probs=probs, ctx_ch_prob=0.05,
                                 predef_tr_mats=True, balanced_probs=True,
-                                num_contexts=1)
-    env = Variable_nch(env, block_nch=5000000000, prob_12=0.05, sorted_ch=True)
+                                num_contexts=num_blocks)
+    env = Variable_nch(env, block_nch=var_nch_block, prob_12=0.05, sorted_ch=True)
+    env = PerfPhases(env, start_ph=3, step_ph=1, wait=100,
+                     flag_key='above_perf_th_vnch')
+    env = ComputeMeanPerf(env, perf_th=[var_nch_perf_th, tr_hist_perf_th],
+                          perf_w=[var_nch_block, tr_hist_block],
+                          key=['vnch', 'trh'])
     transitions = np.zeros((num_blocks, num_ch, num_ch))
     env = PassReward(env)
     env = PassAction(env)
@@ -632,15 +679,28 @@ def test_concat_wrpprs_th_vch_pssr_pssa(env_name, num_steps=100000, probs=0.8,
     gt = []
     nch = []
     obs_mat = []
+    perf_vnch = []
+    perf_trh = []
+    phase = []
     prev_gt = 1
+    obs_cum = np.zeros((num_ch,))
     for stp in range(num_steps):
-        action = env.action_space.sample()
+        if (obs_cum - np.mean(obs_cum) > th).any():
+            action = np.argmax(obs_cum - np.mean(obs_cum))+1
+        else:
+            action = 0
         obs, rew, done, info = env.step(action)
         obs_mat.append(obs)
         blk_stp.append(info['curr_block'])
         if done:
             env.reset()
         if info['new_trial'] and verbose:
+            perf_vnch.append(info['mean_perf_'+str(var_nch_perf_th)+'_' +
+                             str(var_nch_block)+'_vnch'])
+            perf_trh.append(info['mean_perf_'+str(tr_hist_perf_th)+'_' +
+                                 str(tr_hist_block)+'_trh'])
+            phase.append(info['phase'])
+            obs_cum = np.zeros((env_args['n_ch'],))
             # print(info['curr_block'])
             # print('-------------')
             blk.append(info['curr_block'])
@@ -659,30 +719,42 @@ def test_concat_wrpprs_th_vch_pssr_pssa(env_name, num_steps=100000, probs=0.8,
                 if prev_gt > info['nch'] or info['gt']-1 > info['nch']:
                     pass
             prev_gt = info['gt']-1
+        else:
+            obs_cum += obs[1:num_ch+1]
     if verbose:
-        print(blk_id)
         sel_choices, counts = np.unique(s_chs, return_counts=1)
         print('\nSelected choices and frequencies:')
         print(sel_choices)
         print(counts/np.sum(counts))
-        tr_blks, counts =\
-            np.unique(np.array(blk)[np.array(s_chs) == '1-2'],
-                      return_counts=1)
+        blocks, counts = np.unique(blk, return_counts=1)
+        print('\nTransition matrices and frequencies:')
+        print(blocks)
+        print(counts/np.sum(counts))
+        tr_blks, counts = np.unique(np.array(blk)[np.array(s_chs) == '1-2'],
+                                    return_counts=1)
         print('\n2AFC task transition matrices and frequencies:')
         print(tr_blks)
         print(counts/np.sum(counts))
         _, ax = plt.subplots(nrows=1, ncols=1)
         obs_mat = np.array(obs_mat)
-        ax.imshow(obs_mat[10000:20000, :].T, aspect='auto')
-        _, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
+        ax.imshow(obs_mat.T, aspect='auto')
+        _, ax = plt.subplots(nrows=3, ncols=1, sharex=True)
         blk_int = [int(x.replace('-', '')) for x in blk]
         ax[0].plot(np.array(blk_int[:20000])/(10**(num_ch-1)), '-+',
                    label='tr-blck')
         ax[0].plot(nch[:20000], '-+', label='num choices')
+        ax[0].plot(phase[:20000], '-+', label='phase')
         ax[1].plot(gt[:20000], '-+', label='correct side')
-        ax[1].set_xlabel('Trials')
+        ax[2].set_xlabel('Trials')
+        ax[2].plot(perf_vnch[:20000], '-+',
+                   label='performance (w='+str(var_nch_block) +
+                   ', th='+str(var_nch_perf_th)+')')
+        ax[2].plot(perf_trh[:20000], '-+',
+                   label='performance (w='+str(tr_hist_block) +
+                   ', th='+str(tr_hist_perf_th)+')')
         ax[0].legend()
         ax[1].legend()
+        ax[2].legend()
         num_cols_rows = int(np.sqrt(num_blocks))
         _, ax1 = plt.subplots(ncols=num_cols_rows, nrows=num_cols_rows)
         ax1 = ax1.flatten()
@@ -750,15 +822,13 @@ if __name__ == '__main__':
     env_args = {'stim_scale': 10, 'timing': {'fixation': 100,
                                              'stimulus': 200,
                                              'decision': 200}}
-    test_learn_trans_matrix()
+    test_biascorrection()
     sys.exit()
+    data = test_concat_wrpprs_th_vch_pssr_pssa(env_args=env_args)
+    test_learn_trans_matrix()
     test_stim_acc_signal()
     test_perf_integrator()
     # test_identity('Nothing-v0', num_steps=5)
-    data = test_concat_wrpprs_th_vch_pssr_pssa('NAltPerceptualDecisionMaking-v0',
-                                               num_steps=200000, verbose=True,
-                                               probs=0.99, num_blocks=16,
-                                               env_args=env_args)
 
     test_timeout()
     test_reactiontime()

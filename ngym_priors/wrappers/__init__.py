@@ -20,6 +20,9 @@ from ngym_priors.wrappers.transfer_learning import TransferLearning
 from ngym_priors.wrappers.perfect_integrator import PerfectIntegrator
 from ngym_priors.wrappers.stim_acc_signal import StimAccSignal
 from ngym_priors.wrappers.learn_trans_matrix import LearnTransMatrix
+from ngym_priors.wrappers.compute_mean_perf import ComputeMeanPerf
+from ngym_priors.wrappers.perf_phases import PerfPhases
+from ngym_priors.wrappers.bias_correction import BiasCorrection
 
 ALL_WRAPPERS = {'DynamicNoise-v0':
                 'ngym_priors.wrappers.dynamic_noise:DynamicNoise',
@@ -46,7 +49,13 @@ ALL_WRAPPERS = {'DynamicNoise-v0':
                 'StimAccSignal-v0':
                     'ngym_priors.wrappers.stim_acc_signal:StimAccSignal',
                 'LearnTransMatrix-v0':
-                    'ngym_priors.wrappers.learn_trans_matrix:LearnTransMatrix'}
+                    'ngym_priors.wrappers.learn_trans_matrix:LearnTransMatrix',
+                'ComputeMeanPerf-v0':
+                    'ngym_priors.wrappers.compute_mean_perf:ComputeMeanPerf',
+                'PerfPhases-v0':
+                    'ngym_priors.wrappers.perf_phases:PerfPhases',
+                'BiasCorrection-v0':
+                    'ngym_priors.wrappers.bias_correction:BiasCorrection'}
 
 
 def all_wrappers():
