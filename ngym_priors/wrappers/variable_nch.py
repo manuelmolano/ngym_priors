@@ -11,7 +11,6 @@ import neurogym as ngym
 import numpy as np
 from neurogym.core import TrialWrapper
 import warnings
-from collections import deque
 
 
 class Variable_nch(TrialWrapper):
@@ -35,6 +34,7 @@ class Variable_nch(TrialWrapper):
         assert isinstance(self.unwrapped, ngym.TrialEnv), 'Task has to be TrialEnv'
         self.block_nch = block_nch
         self.max_nch = len(self.unwrapped.choices)  # Max number of choices
+        self.curr_max_nch = self.max_nch
         self.prob_12 = prob_12 if self.max_nch > 2 else 1
         self.sorted_ch = sorted_ch
         # uniform distr. across choices unless prob(n_ch=2) (prob_2) is specified
@@ -46,18 +46,27 @@ class Variable_nch(TrialWrapper):
                 self.prob = self.prob/np.sum(self.prob)
         else:
             self.prob = [1/(self.max_nch-1)]*(self.max_nch-1)
+        self.curr_prob = self.prob
         # Initialize selected choices
         self.nch = self.max_nch
         self.sel_chs = np.arange(self.max_nch)
         self.block_dur = 0
 
     def new_trial(self, **kwargs):
+        change_block = False
+        above_th = True if 'above_perf_th_vnch' not in kwargs.keys()\
+            else kwargs['above_perf_th_vnch']
         if 'ground_truth' in kwargs.keys():
             warnings.warn('Variable_nch wrapper will ignore passed ground truth')
             del kwargs['ground_truth']
+        if 'phase' in kwargs.keys() and self.curr_max_nch != kwargs['phase']:
+            self.curr_max_nch = kwargs['phase']
+            self.curr_prob = self.prob[:self.curr_max_nch-1]
+            self.curr_prob = self.curr_prob/np.sum(self.curr_prob)
+            change_block = True
         self.block_dur += 1
         # We change number of active choices every 'block_nch'.
-        if self.block_dur > self.block_nch:
+        if change_block or (above_th and self.block_dur > self.block_nch):
             self.block_dur = 0
             self.get_sel_chs()
 
@@ -71,17 +80,17 @@ class Variable_nch(TrialWrapper):
             self.sel_chs = np.arange(self.nch)
         else:
             if self.sorted_ch:
-                prb = self.prob[1*fx_12:]
-                self.nch = self.rng.choice(range(2+1*fx_12, self.max_nch + 1),
+                prb = self.curr_prob[1*fx_12:]
+                self.nch = self.rng.choice(range(2+1*fx_12, self.curr_max_nch + 1),
                                            p=prb/np.sum(prb))
                 self.sel_chs = np.arange(self.nch)
             else:
-                self.nch = self.rng.choice(range(2, self.max_nch + 1),
-                                           p=self.prob)
-                self.sel_chs = sorted(self.rng.choice(range(self.max_nch),
+                self.nch = self.rng.choice(range(2, self.curr_max_nch + 1),
+                                           p=self.curr_prob)
+                self.sel_chs = sorted(self.rng.choice(range(self.curr_max_nch),
                                                       self.nch, replace=False))
                 while (fx_12 and set(self.sel_chs) == set(np.arange(2))):
-                    self.sel_chs = sorted(self.rng.choice(range(self.max_nch),
+                    self.sel_chs = sorted(self.rng.choice(range(self.curr_max_nch),
                                                           self.nch, replace=False))
 
     def step(self, action):

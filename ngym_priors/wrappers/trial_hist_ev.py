@@ -90,7 +90,9 @@ class TrialHistoryEvolution(TrialWrapper):
         # ---------------------------------------------------------------------
         # Periods
         # ---------------------------------------------------------------------
-        block_change = False
+        block_changed = False
+        above_th = True if 'above_perf_th_trh' not in kwargs.keys()\
+            else kwargs['above_perf_th_trh']
         # Check if n_ch is passed and if it is different from previous value
         if 'sel_chs' in kwargs.keys() and\
            set(kwargs['sel_chs']) != set(self.curr_chs):
@@ -99,20 +101,19 @@ class TrialHistoryEvolution(TrialWrapper):
             self.prev_trial = self.rng.choice(np.arange(self.curr_n_ch))
             self.curr_contexts = self.contexts
             self.curr_tr_mat = self.trans_probs
-            block_change = True
-        # change rep. prob. every self.ctx_dur trials
-        if not block_change:
+            block_changed = True
+        if above_th and not block_changed:
+            # change rep. prob. every self.ctx_dur trials
             if self.ctx_ch_prob is None:
-                block_change = self.unwrapped.num_tr % self.ctx_dur == 0
+                change_block = self.unwrapped.num_tr % self.ctx_dur == 0
             else:
-                block_change = self.unwrapped.rng.rand() < self.ctx_ch_prob
-            if block_change:
+                change_block = self.unwrapped.rng.rand() < self.ctx_ch_prob
+            if change_block:
                 self.curr_tr_mat = self.trans_probs
-
+        # get ground truth
         probs_curr_blk = self.curr_tr_mat[self.prev_trial, :]
         ground_truth = self.unwrapped.rng.choice(self.curr_chs, p=probs_curr_blk)
-        self.prev_trial =\
-            np.where(self.curr_chs == ground_truth)[0][0]
+        self.prev_trial = np.where(self.curr_chs == ground_truth)[0][0]
         kwargs.update({'ground_truth': ground_truth,
                        'curr_block': self.curr_block})
         self.env.new_trial(**kwargs)
