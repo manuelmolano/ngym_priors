@@ -55,7 +55,7 @@ class TrialHistoryEvolution(TrialWrapper):
     }
 
     def __init__(self, env, probs=None, ctx_dur=200, num_contexts=3,
-                 fix_2AFC=False, death_prob=0.0001, ctx_ch_prob=None,
+                 fix_2AFC=False, death_prob=0.0000001, ctx_ch_prob=None,
                  balanced_probs=False, predef_tr_mats=False):
         super().__init__(env)
         try:

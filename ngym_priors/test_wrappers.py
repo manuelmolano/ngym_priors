@@ -653,7 +653,7 @@ def test_concat_wrpprs_th_vch_pssr_pssa(env_name='NAltPerceptualDecisionMaking-v
     var_nch_block = 100
     var_nch_perf_th = 0.8
     tr_hist_block = 20
-    tr_hist_perf_th = 0.86
+    tr_hist_perf_th = 0.5
     env_args['n_ch'] = num_ch
     env_args['zero_irrelevant_stim'] = True
     env_args['ob_histblock'] = False
@@ -666,7 +666,8 @@ def test_concat_wrpprs_th_vch_pssr_pssa(env_name='NAltPerceptualDecisionMaking-v
                      flag_key='above_perf_th_vnch')
     env = ComputeMeanPerf(env, perf_th=[var_nch_perf_th, tr_hist_perf_th],
                           perf_w=[var_nch_block, tr_hist_block],
-                          key=['vnch', 'trh'])
+                          key=['vnch', 'trh'],
+                          cond_on_coh=[False, True])
     transitions = np.zeros((num_blocks, num_ch, num_ch))
     env = PassReward(env)
     env = PassAction(env)
@@ -747,10 +748,10 @@ def test_concat_wrpprs_th_vch_pssr_pssa(env_name='NAltPerceptualDecisionMaking-v
         ax[1].plot(gt[:20000], '-+', label='correct side')
         ax[2].set_xlabel('Trials')
         ax[2].plot(perf_vnch[:20000], '-+',
-                   label='performance (w='+str(var_nch_block) +
+                   label='performance vnch (w='+str(var_nch_block) +
                    ', th='+str(var_nch_perf_th)+')')
         ax[2].plot(perf_trh[:20000], '-+',
-                   label='performance (w='+str(tr_hist_block) +
+                   label='performance trh (w='+str(tr_hist_block) +
                    ', th='+str(tr_hist_perf_th)+')')
         ax[0].legend()
         ax[1].legend()
@@ -822,9 +823,9 @@ if __name__ == '__main__':
     env_args = {'stim_scale': 10, 'timing': {'fixation': 100,
                                              'stimulus': 200,
                                              'decision': 200}}
-    test_biascorrection()
-    sys.exit()
     data = test_concat_wrpprs_th_vch_pssr_pssa(env_args=env_args)
+    sys.exit()
+    test_biascorrection()
     test_learn_trans_matrix()
     test_stim_acc_signal()
     test_perf_integrator()

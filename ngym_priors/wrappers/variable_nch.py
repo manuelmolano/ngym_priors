@@ -49,7 +49,7 @@ class Variable_nch(TrialWrapper):
         self.curr_prob = self.prob
         # Initialize selected choices
         self.nch = self.max_nch
-        self.sel_chs = np.arange(self.max_nch)
+        self.get_sel_chs()
         self.block_dur = 0
 
     def new_trial(self, **kwargs):
@@ -87,10 +87,10 @@ class Variable_nch(TrialWrapper):
             else:
                 self.nch = self.rng.choice(range(2, self.curr_max_nch + 1),
                                            p=self.curr_prob)
-                self.sel_chs = sorted(self.rng.choice(range(self.curr_max_nch),
+                self.sel_chs = sorted(self.rng.choice(range(self.max_nch),
                                                       self.nch, replace=False))
                 while (fx_12 and set(self.sel_chs) == set(np.arange(2))):
-                    self.sel_chs = sorted(self.rng.choice(range(self.curr_max_nch),
+                    self.sel_chs = sorted(self.rng.choice(range(self.max_nch),
                                                           self.nch, replace=False))
 
     def step(self, action):
