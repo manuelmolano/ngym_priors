@@ -21,7 +21,7 @@ class BiasCorrection(Wrapper):
         'paper_name': None
     }
 
-    def __init__(self, env, choice_w=1000):
+    def __init__(self, env, choice_w=1000, th=0.1):
         """
         block_nch: duration of each block containing a specific number
         of active choices
@@ -33,6 +33,7 @@ class BiasCorrection(Wrapper):
         self.choice_w = choice_w
         self.choices = deque(maxlen=self.choice_w)
         self.ground_truth = deque(maxlen=self.choice_w)
+        self.th = th
 
     def step(self, action):
         obs, reward, done, info = self.env.step(action)
@@ -45,5 +46,9 @@ class BiasCorrection(Wrapper):
                 factor = np.min([(1+np.sum(np.array(self.choices) == x)) /
                                  np.sum(np.array(self.ground_truth) == x)
                                  for x in poss_chs])
-                reward = reward*factor
+                if factor < self.th:
+                    reward = reward*factor
+                    info['bias_corr_on'] = True
+                else:
+                    info['bias_corr_on'] = False
         return obs, reward, done, info
