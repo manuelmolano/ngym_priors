@@ -193,7 +193,7 @@ def test_perf_integrator(env='NAltPerceptualDecisionMaking-v0', num_steps=100,
 
 
 def test_learn_trans_matrix(env='NAltPerceptualDecisionMaking-v0', num_steps=100,
-                            verbose=True, n_ch=4, th=0.5):
+                            verbose=True, n_ch=2, th=0.01):
     """
     Test pass-reward wrapper.
 
@@ -211,7 +211,7 @@ def test_learn_trans_matrix(env='NAltPerceptualDecisionMaking-v0', num_steps=100
     None.
 
     """
-    env_args = {'timing': {'fixation': 100, 'stimulus': 500, 'decision': 100},
+    env_args = {'timing': {'fixation': 100, 'stimulus': 300, 'decision': 100},
                 'n_ch': n_ch}
     env = gym.make(env, **env_args)
     env = TrialHistoryEvolution(env, probs=0.9, predef_tr_mats=True,
@@ -823,8 +823,9 @@ if __name__ == '__main__':
     env_args = {'stim_scale': 10, 'timing': {'fixation': 100,
                                              'stimulus': 200,
                                              'decision': 200}}
-    data = test_concat_wrpprs_th_vch_pssr_pssa(env_args=env_args)
+    test_learn_trans_matrix()
     sys.exit()
+    data = test_concat_wrpprs_th_vch_pssr_pssa(env_args=env_args)
     test_biascorrection()
     test_learn_trans_matrix()
     test_stim_acc_signal()

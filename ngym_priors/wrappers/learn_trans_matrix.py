@@ -24,7 +24,7 @@ class LearnTransMatrix(Wrapper):
         'on perceptual decisions'
     }
 
-    def __init__(self, env):
+    def __init__(self, env, lr=0.1, decay=0.01):
         super().__init__(env)
         try:
             self.n_ch = len(self.unwrapped.choices)  # max num of choices
@@ -33,7 +33,8 @@ class LearnTransMatrix(Wrapper):
         assert isinstance(self.unwrapped, ngym.TrialEnv), 'Task has to be TrialEnv'
         self.trans_mat = np.ones((self.n_ch, self.n_ch))/self.n_ch
         self.prev_choice = -1
-        self.lr = 0.5
+        self.lr = lr
+        self.decay = decay
         self.obs_sh = self.env.observation_space.shape[0]
         self.observation_space = spaces.Box(-np.inf, np.inf,
                                             shape=(self.obs_sh+self.n_ch,),
@@ -51,15 +52,20 @@ class LearnTransMatrix(Wrapper):
             probs = self.trans_mat[self.prev_choice, :]
         else:
             probs = np.ones((self.n_ch,))/self.n_ch
+        assert np.abs(np.sum(probs) - 1) < 0.00001
         obs_prev_act_rew = np.concatenate((obs, probs))
         # if it's the end of trial, store action and reward, and update performance
         if info['new_trial']:
             # build observation from previous action and reward
             if self.prev_choice != -1 and action != 0:
                 Qn = self.trans_mat[self.prev_choice, action-1]
-                Qn_1 = Qn+self.lr*(1-Qn)
+                Qn_1 = Qn+self.lr*(1-Qn)  # from Sutton and Barto
                 self.trans_mat[self.prev_choice, action-1] = Qn_1
-                self.trans_mat[self.prev_choice, :] /=\
-                    np.sum(self.trans_mat[self.prev_choice, :]) 
             self.prev_choice = action-1
+            # decay
+            Qn = self.trans_mat
+            Qn_1 = Qn+self.decay*(1-Qn)  # from Sutton and Barto
+            self.trans_mat = Qn_1
+            # normalize
+            self.trans_mat = self.trans_mat/np.sum(self.trans_mat, axis=1)[:, None]
         return obs_prev_act_rew, reward, done, info
