@@ -23,6 +23,7 @@ from ngym_priors.wrappers.learn_trans_matrix import LearnTransMatrix
 from ngym_priors.wrappers.compute_mean_perf import ComputeMeanPerf
 from ngym_priors.wrappers.perf_phases import PerfPhases
 from ngym_priors.wrappers.bias_correction import BiasCorrection
+from ngym_priors.wrappers.persistence import Persistence
 
 ALL_WRAPPERS = {'DynamicNoise-v0':
                 'ngym_priors.wrappers.dynamic_noise:DynamicNoise',
@@ -55,7 +56,9 @@ ALL_WRAPPERS = {'DynamicNoise-v0':
                 'PerfPhases-v0':
                     'ngym_priors.wrappers.perf_phases:PerfPhases',
                 'BiasCorrection-v0':
-                    'ngym_priors.wrappers.bias_correction:BiasCorrection'}
+                    'ngym_priors.wrappers.bias_correction:BiasCorrection',
+                'Persistence-v0':
+                    'ngym_priors.wrappers.persistence:Persistence'}
 
 
 def all_wrappers():

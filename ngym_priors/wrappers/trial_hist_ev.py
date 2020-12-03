@@ -24,7 +24,7 @@ class TrialHistoryEvolution(TrialWrapper):
     env : neurogym.env
         Environment that will be wrapped
     probs : float, optional
-        The probability of the the most likely next choice. The default is None.
+        The probability of the most likely next choice. The default is None.
     ctx_dur : int, optional
         Duration of the contexts (if ctx_ch_prob is None). Default is 200 (trials).
     num_contexts : int, optional
@@ -63,11 +63,11 @@ class TrialHistoryEvolution(TrialWrapper):
             self.curr_chs = self.unwrapped.choices
             self.curr_n_ch = self.n_ch
         except AttributeError:
-            raise AttributeError('''SideBias requires task
+            raise AttributeError('''TrialHistoryEvolution requires task
                                  to have attribute choices''')
         assert isinstance(self.unwrapped, ngym.TrialEnv), 'Task has to be TrialEnv'
         assert probs is not None, 'Please provide choices probabilities'
-        self.fix_2AFC = fix_2AFC
+        self.fix_2AFC = fix_2AFC  # imposes that chs 1 and 2 will follow 2AFC task
         self.probs = probs
         self.balanced_probs = balanced_probs
         self.num_contexts = num_contexts if not predef_tr_mats else 3
