@@ -38,7 +38,7 @@ class Persistence(TrialWrapper):
         'paper_name': ''
     }
 
-    def __init__(self, env, prob=None):
+    def __init__(self, env, probs=None):
         super().__init__(env)
         try:
             self.n_ch = len(self.unwrapped.choices)  # max num of choices
@@ -48,7 +48,8 @@ class Persistence(TrialWrapper):
             raise AttributeError('''SideBias requires task
                                  to have attribute choices''')
         assert isinstance(self.unwrapped, ngym.TrialEnv), 'Task has to be TrialEnv'
-        assert prob is not None, 'Please provide choices probabilities'
+        assert probs is not None, 'Please provide choices probabilities'
+        self.probs = probs
         self.prev_trial = self.rng.choice(self.n_ch)  # random initialization
         self.curr_tr_mat = self.trans_probs
 
