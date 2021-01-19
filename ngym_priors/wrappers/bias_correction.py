@@ -40,8 +40,7 @@ class BiasCorrection(Wrapper):
         if info['new_trial']:
             self.choices.append(action)
             self.ground_truth.append(info['gt'])
-            if info['performance'] == 1 and len(self.choices) == self.choice_w and\
-               len(self.ground_truth) == self.choice_w:
+            if info['performance'] == 1 and len(self.choices) == self.choice_w:
                 poss_chs = np.unique(self.ground_truth)
                 factor = np.min([(1+np.sum(np.array(self.choices) == x)) /
                                  np.sum(np.array(self.ground_truth) == x)
