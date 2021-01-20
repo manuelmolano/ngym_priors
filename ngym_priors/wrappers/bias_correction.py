@@ -51,7 +51,9 @@ class BiasCorrection(Wrapper):
                 choice_ignored = poss_chs[indx]
                 if factor < self.th and action != choice_ignored:
                     reward = reward*factor
-                    info['bias_corr_on'] = True
+                    info['bias_corr_on'] = 1
                 else:
-                    info['bias_corr_on'] = False
+                    info['bias_corr_on'] = 0 if factor < self.th else -1
+        else:
+            info['bias_corr_on'] = -2
         return obs, reward, done, info
