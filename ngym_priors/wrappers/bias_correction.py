@@ -53,7 +53,7 @@ class BiasCorrection(Wrapper):
                     reward = reward*factor
                     info['bias_corr_on'] = 1
                 else:
-                    info['bias_corr_on'] = 0 if factor < self.th else -1
-        else:
-            info['bias_corr_on'] = -2
+                    info['bias_corr_on'] = -1 if factor < self.th else 0
+            else:
+                info['bias_corr_on'] = -2
         return obs, reward, done, info
