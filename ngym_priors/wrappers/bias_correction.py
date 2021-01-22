@@ -45,11 +45,11 @@ class BiasCorrection(Wrapper):
                 factor = np.min([(1+np.sum(np.array(self.choices) == x)) /
                                  np.sum(np.array(self.ground_truth) == x)
                                  for x in poss_chs])
-                indx = np.argmin([(1+np.sum(np.array(self.choices) == x)) /
+                indx = np.argmax([(1+np.sum(np.array(self.choices) == x)) /
                                   np.sum(np.array(self.ground_truth) == x)
                                   for x in poss_chs])
-                choice_ignored = poss_chs[indx]
-                if factor < self.th and action != choice_ignored:
+                over_selected_choice = poss_chs[indx]
+                if factor < self.th and action == over_selected_choice:
                     reward = reward*factor
                     info['bias_corr_on'] = 1
                 else:
