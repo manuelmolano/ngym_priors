@@ -24,6 +24,7 @@ from ngym_priors.wrappers.compute_mean_perf import ComputeMeanPerf
 from ngym_priors.wrappers.perf_phases import PerfPhases
 from ngym_priors.wrappers.bias_correction import BiasCorrection
 from ngym_priors.wrappers.persistence import Persistence
+from ngym_priors.wrappers.pass_gt import PassGT
 
 ALL_WRAPPERS = {'DynamicNoise-v0':
                 'ngym_priors.wrappers.dynamic_noise:DynamicNoise',
@@ -58,7 +59,9 @@ ALL_WRAPPERS = {'DynamicNoise-v0':
                 'BiasCorrection-v0':
                     'ngym_priors.wrappers.bias_correction:BiasCorrection',
                 'Persistence-v0':
-                    'ngym_priors.wrappers.persistence:Persistence'}
+                    'ngym_priors.wrappers.persistence:Persistence',
+                'PassGT-v0':
+                    'ngym_priors.wrappers.pass_gt:PassGT'}
 
 
 def all_wrappers():
