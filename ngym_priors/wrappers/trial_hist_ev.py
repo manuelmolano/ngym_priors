@@ -35,8 +35,11 @@ class TrialHistoryEvolution(TrialWrapper):
         Probability of context change. The default is None.
     balanced_probs : boolean, optional
         Indicates whether transtion matrices are balanced. The default is False.
-
+    rand_pre_train : bool, optional
+        if True, the pre-training (i.e. N>2) is done with random trnsitions (False)
     Raises
+    fix_2AFC : bool, optional
+        fix the transitions between 1 and 2 regardless of n_ch (False)
     ------
     AttributeError
         DESCRIPTION.
@@ -56,7 +59,7 @@ class TrialHistoryEvolution(TrialWrapper):
 
     def __init__(self, env, probs=None, ctx_dur=200, num_contexts=3,
                  fix_2AFC=False, death_prob=0.0000001, ctx_ch_prob=None,
-                 balanced_probs=False, predef_tr_mats=False):
+                 balanced_probs=False, predef_tr_mats=False, rand_pretrain=False):
         super().__init__(env)
         try:
             self.n_ch = len(self.unwrapped.choices)  # max num of choices
@@ -69,6 +72,7 @@ class TrialHistoryEvolution(TrialWrapper):
         assert probs is not None, 'Please provide choices probabilities'
         self.fix_2AFC = fix_2AFC  # imposes that chs 1 and 2 will follow 2AFC task
         self.probs = probs
+        self.rand_pretrain = rand_pretrain
         self.balanced_probs = balanced_probs
         self.num_contexts = num_contexts if not predef_tr_mats else 3
         self.predef_tr_mats = predef_tr_mats
@@ -132,8 +136,16 @@ class TrialHistoryEvolution(TrialWrapper):
         sel_cntxt = self.unwrapped.rng.choice(range(self.contexts.shape[0]))
         # build transition matrix
         context = self.curr_contexts[sel_cntxt]
-        tr_mat = np.eye(self.curr_n_ch)*self.probs
-        tr_mat[tr_mat == 0] = (1-self.probs)/(self.curr_n_ch-1)
+        # this is to present random transitions when n_ch > 2
+        # (to pretrain in an unstructured environment)
+        if self.rand_pretrain and self.curr_n_ch > 2:
+            high_probs = 1/self.curr_n_ch
+            low_probs = 1/self.curr_n_ch
+        else:
+            high_probs = self.probs
+            low_probs = (1-self.probs)/(self.curr_n_ch-1)
+        tr_mat = np.eye(self.curr_n_ch)*high_probs
+        tr_mat[tr_mat == 0] = low_probs
         tr_mat = tr_mat[context, :]
         self.curr_block = sel_cntxt
         # get context id

@@ -215,7 +215,7 @@ def test_learn_trans_matrix(env='NAltPerceptualDecisionMaking-v0', num_steps=100
                 'n_ch': n_ch}
     env = gym.make(env, **env_args)
     env = TrialHistoryEvolution(env, probs=0.9, predef_tr_mats=True,
-                                num_contexts=1)    
+                                num_contexts=1)
     env = LearnTransMatrix(env)
     env = PassAction(env)
     env = PassReward(env)
@@ -647,9 +647,9 @@ def test_timeout(env='NAltPerceptualDecisionMaking-v0', time_out=500,
 
 
 def test_concat_wrpprs_th_vch_pssr_pssa(env_name='NAltPerceptualDecisionMaking-v0',
-                                        num_steps=1000, probs=0.8, num_blocks=16,
+                                        num_steps=10000, probs=0.8, num_blocks=16,
                                         verbose=True, num_ch=6, variable_nch=True,
-                                        th=0.5, env_args={}):
+                                        th=0.5, rand_pretr=False, env_args={}):
     var_nch_block = 100
     var_nch_perf_th = 0.8
     tr_hist_block = 20
@@ -660,14 +660,14 @@ def test_concat_wrpprs_th_vch_pssr_pssa(env_name='NAltPerceptualDecisionMaking-v
     env = gym.make(env_name, **env_args)
     env = TrialHistoryEvolution(env, probs=probs, ctx_ch_prob=0.05,
                                 predef_tr_mats=True, balanced_probs=True,
-                                num_contexts=num_blocks)
-    env = Variable_nch(env, block_nch=var_nch_block, prob_12=0.05, sorted_ch=True)
-    env = PerfPhases(env, start_ph=3, step_ph=1, wait=100,
-                     flag_key='above_perf_th_vnch')
-    env = ComputeMeanPerf(env, perf_th=[var_nch_perf_th, tr_hist_perf_th],
-                          perf_w=[var_nch_block, tr_hist_block],
-                          key=['vnch', 'trh'],
-                          cond_on_coh=[False, True])
+                                num_contexts=num_blocks, rand_pretrain=rand_pretr)
+    env = Variable_nch(env, block_nch=var_nch_block, prob_12=0.5, sorted_ch=True)
+    # env = PerfPhases(env, start_ph=3, step_ph=1, wait=100,
+    #                  flag_key='above_perf_th_vnch')
+    # env = ComputeMeanPerf(env, perf_th=[var_nch_perf_th, tr_hist_perf_th],
+    #                       perf_w=[var_nch_block, tr_hist_block],
+    #                       key=['vnch', 'trh'],
+    #                       cond_on_coh=[False, True])
     transitions = np.zeros((num_blocks, num_ch, num_ch))
     env = PassReward(env)
     env = PassAction(env)
@@ -696,11 +696,11 @@ def test_concat_wrpprs_th_vch_pssr_pssa(env_name='NAltPerceptualDecisionMaking-v
         if done:
             env.reset()
         if info['new_trial'] and verbose:
-            perf_vnch.append(info['mean_perf_'+str(var_nch_perf_th)+'_' +
-                             str(var_nch_block)+'_vnch'])
-            perf_trh.append(info['mean_perf_'+str(tr_hist_perf_th)+'_' +
-                                 str(tr_hist_block)+'_trh'])
-            phase.append(info['phase'])
+            # perf_vnch.append(info['mean_perf_'+str(var_nch_perf_th)+'_' +
+            #                  str(var_nch_block)+'_vnch'])
+            # perf_trh.append(info['mean_perf_'+str(tr_hist_perf_th)+'_' +
+            #                      str(tr_hist_block)+'_trh'])
+            # phase.append(info['phase'])
             obs_cum = np.zeros((env_args['n_ch'],))
             # print(info['curr_block'])
             # print('-------------')
@@ -793,11 +793,11 @@ def check_blk_id(blk_id_mat, curr_blk, num_blk, sel_chs):
 
 
 def test_trialhistEv(env_name, num_steps=10000, probs=0.8, num_blocks=2,
-                     verbose=True, num_ch=4):
+                     verbose=True, num_ch=4, rand_pretr=False):
     env = gym.make(env_name, **{'n_ch': num_ch})
-    env = TrialHistoryEvolution(env, probs=probs, ctx_dur=200, death_prob=0.001,
+    env = TrialHistoryEvolution(env, probs=probs, ctx_dur=200, death_prob=0.00001,
                                 num_contexts=num_blocks, fix_2AFC=True,
-                                balanced_probs=True)
+                                balanced_probs=True, rand_pretrain=rand_pretr)
     transitions = []
     env.reset()
     num_tr = 0
@@ -808,7 +808,6 @@ def test_trialhistEv(env_name, num_steps=10000, probs=0.8, num_blocks=2,
             env.reset()
         if info['new_trial'] and verbose:
             num_tr += 1
-            # print(info['curr_block'])
             transitions.append(np.array([np.where(x == 0.8)[0][0]
                                          for x in env.curr_tr_mat[0, :, :]]))
         if info['new_generation'] and verbose:
@@ -823,23 +822,24 @@ if __name__ == '__main__':
     env_args = {'stim_scale': 10, 'timing': {'fixation': 100,
                                              'stimulus': 200,
                                              'decision': 200}}
-    test_learn_trans_matrix()
-    sys.exit()
-    data = test_concat_wrpprs_th_vch_pssr_pssa(env_args=env_args)
-    test_biascorrection()
-    test_learn_trans_matrix()
-    test_stim_acc_signal()
-    test_perf_integrator()
-    # test_identity('Nothing-v0', num_steps=5)
+    # test_learn_trans_matrix()
+    # sys.exit()
+    data = test_concat_wrpprs_th_vch_pssr_pssa(env_args=env_args, rand_pretr=False)
+    # test_biascorrection()
+    # test_learn_trans_matrix()
+    # test_stim_acc_signal()
+    # test_perf_integrator()
+    # # test_identity('Nothing-v0', num_steps=5)
 
-    test_timeout()
-    test_reactiontime()
-    test_noise()
-    sys.exit()
-    test_variablemapping()
-    sys.exit()
-    test_passreward()
-    test_passaction()
+    # test_timeout()
+    # test_reactiontime()
+    # test_noise()
+    # sys.exit()
+    # test_variablemapping()
+    # sys.exit()
+    # test_passreward()
+    # test_passaction()
 
     # test_trialhistEv('NAltPerceptualDecisionMaking-v0', num_steps=100000,
-    #                  probs=0.8, num_blocks=3, verbose=True, num_ch=8)
+    #                   probs=0.8, num_blocks=3, verbose=True, num_ch=8,
+    #                   rand_pretr=False)
